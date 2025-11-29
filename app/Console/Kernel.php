@@ -12,7 +12,15 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
+        // Auto-close files at 11:59 PM
+        $schedule->command('patients:auto-close')
+                ->dailyAt('23:59')
+                ->timezone('Africa/Lagos');
         
+        // Expire old consultancies at midnight (NEW)
+        $schedule->command('consultancies:expire')
+                ->dailyAt('00:01')
+                ->timezone('Africa/Lagos');
     }
 
     /**

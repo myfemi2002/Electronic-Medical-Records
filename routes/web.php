@@ -2,11 +2,13 @@
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\HmoController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\SmtpController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\IndexController;
 use App\Http\Controllers\RolesController;
+use App\Http\Controllers\PatientController;
 use App\Http\Controllers\GroupNameController;
 use App\Http\Controllers\TwoFactorController;
 use App\Http\Controllers\FlagReviewController;
@@ -59,6 +61,48 @@ use App\Http\Controllers\RoleWithPermissionController;
 
     // All Admin Routes Middleware Starts Here
     Route::middleware(['auth', 'roles:admin', 'checkBanned'])->group(function () {
+        
+        // Patient Management Routes (Complete with Receipt Verification Workflow)
+        Route::prefix('patients')->controller(PatientController::class)->name('admin.records.patients.')->group(function () {
+            
+            // Basic CRUD
+            Route::get('/', 'index')->name('index');
+            Route::get('/all', 'all')->name('all');
+            Route::get('/create', 'create')->name('create');
+            Route::post('/store', 'store')->name('store');
+            Route::get('/show/{id}', 'show')->name('show');
+            Route::get('/edit/{id}', 'edit')->name('edit');
+            Route::post('/update/{id}', 'update')->name('update');
+            Route::get('/delete/{id}', 'destroy')->name('delete');
+            
+            // File Management Routes
+            Route::get('/open-file/{id}', 'openFile')->name('open-file');
+            Route::get('/close-file/{id}', 'closeFile')->name('close-file');
+            Route::get('/get-open-files', 'getOpenFiles')->name('get-open-files');
+            
+            // Consultancy Verification Routes (Records Department verifies receipt from Accountant)
+            Route::get('/verify-consultancy/{id}', 'verifyConsultancy')->name('verify-consultancy');
+            Route::post('/confirm-consultancy-payment/{id}', 'confirmConsultancyPayment')->name('confirm-consultancy-payment');
+            Route::get('/consultancy-history/{id}', 'consultancyHistory')->name('consultancy-history');
+            
+            // Additional Patient Functions
+            Route::get('/search', 'search')->name('search');
+            Route::get('/open', 'open')->name('open');
+            Route::get('/update-demographics', 'updateDemographics')->name('update-demographics');
+            Route::get('/print-card/{id}', 'printCard')->name('print-card');
+            Route::get('/print-cards', 'printCards')->name('print-cards');
+            Route::get('/visit-history', 'visitHistory')->name('visit-history');
+            Route::get('/reports', 'reports')->name('reports');
+        });
+
+            
+        // HMO Management
+        Route::prefix('hmo')->controller(HmoController::class)->name('admin.settings.hmo.')->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::post('/store', 'store')->name('store');
+            Route::post('/update/{id}', 'update')->name('update');
+            Route::get('/delete/{id}', 'destroy')->name('delete');
+        });
     
 
        
