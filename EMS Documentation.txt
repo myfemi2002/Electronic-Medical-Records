@@ -1,0 +1,69 @@
+
+Server Cron Job (Just edit the path way)
+
+/usr/local/bin/php /home/rccgrteu/rccggooffice.newinfo.com.ng/artisan schedule:run >> /home/rccgrteu/cron.log 2>&1
+
+
+
+
+
+1. Patient arrives at RECORDS
+2. Records checks consultancy status
+3. If expired → Patient goes to ACCOUNTANT
+4. Patient pays → Gets RECEIPT
+5. Patient returns to Records with RECEIPT
+6. Records verifies receipt → Marks as PAID in system
+7. System activates 7-day consultancy
+8. File OPENS automatically
+9. ✅ Patient should now appear in TRIAGE QUEUE (NEW!)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+The system should automatically calculate the  vitals and suggest base on the parameter gotten from then  patient reading 
+
+bp can have  meter indication 
+
+weight can suggest obbess base on weight height and other  parameters
+
+kindly list what can be suggested base on the database table provided 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+do you still remember the patientcontroller ?
+
+here is the 

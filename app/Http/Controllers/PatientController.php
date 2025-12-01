@@ -292,8 +292,11 @@ class PatientController extends Controller
         // Open the file
         $patient->openFile();
         
+        // Automatically add patient to triage queue
+        \App\Models\TriageQueue::addFromOpenFile($patient->id, 'Consultancy verified - awaiting triage');
+        
         return redirect()->route('admin.records.patients.show', $patient->id)
-            ->with('message', 'Consultancy payment verified successfully (Receipt: ' . $payment->receipt_number . '). Patient file opened for 7 days.')
+            ->with('message', 'Consultancy payment verified successfully (Receipt: ' . $payment->receipt_number . '). Patient added to triage queue.')
             ->with('alert-type', 'success');
     }
 

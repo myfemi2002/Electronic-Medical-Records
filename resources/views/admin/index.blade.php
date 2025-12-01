@@ -1,5 +1,5 @@
 @extends('admin.admin_master')
-@section('title', 'Quiz Dashboard')
+@section('title', 'EMS Dashboard')
 @section('admin')
 
 
@@ -825,7 +825,7 @@
                 </div>
                 
                 <div class="col-6 col-md-4 col-lg-3 col-xl-2">
-                    <a href="#" class="dashboard-tile" tabindex="0">
+                    <a href="{{ route('admin.departments.index') }}" class="dashboard-tile" tabindex="0">
                         <div class="tile-icon">
                             <i class="bi bi-diagram-3"></i>
                         </div>

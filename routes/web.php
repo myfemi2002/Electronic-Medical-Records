@@ -8,9 +8,11 @@ use App\Http\Controllers\SmtpController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\IndexController;
 use App\Http\Controllers\RolesController;
+use App\Http\Controllers\TriageController;
 use App\Http\Controllers\PatientController;
 use App\Http\Controllers\GroupNameController;
 use App\Http\Controllers\TwoFactorController;
+use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\FlagReviewController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\LayingHandsController;
@@ -102,6 +104,44 @@ use App\Http\Controllers\RoleWithPermissionController;
             Route::post('/store', 'store')->name('store');
             Route::post('/update/{id}', 'update')->name('update');
             Route::get('/delete/{id}', 'destroy')->name('delete');
+        });
+
+        // Complete CRUD for dynamic departments management
+        Route::prefix('departments')->name('admin.departments.')->group(function () {
+            Route::get('/', [DepartmentController::class, 'index'])->name('index');
+            Route::get('/create', [DepartmentController::class, 'create'])->name('create');
+            Route::post('/store', [DepartmentController::class, 'store'])->name('store');
+            Route::get('/show/{id}', [DepartmentController::class, 'show'])->name('show');
+            Route::get('/edit/{id}', [DepartmentController::class, 'edit'])->name('edit');
+            Route::post('/update/{id}', [DepartmentController::class, 'update'])->name('update');
+            Route::get('/delete/{id}', [DepartmentController::class, 'destroy'])->name('delete');
+            Route::patch('/toggle-status/{id}', [DepartmentController::class, 'toggleStatus'])->name('toggle-status');
+            
+            // AJAX Routes
+            Route::get('/get-staff/{id}', [DepartmentController::class, 'getStaff'])->name('get-staff');
+        });
+
+        // Complete triage workflow with vital interpretation
+        Route::prefix('triage')->name('admin.triage.')->group(function () {
+            // Dashboard
+            Route::get('/', [TriageController::class, 'index'])->name('index');
+            
+            // Waiting List
+            Route::get('/waiting-list', [TriageController::class, 'waitingList'])->name('waiting-list');
+            
+            // Vitals Capture
+            Route::get('/capture-vitals/{queue}', [TriageController::class, 'captureVitals'])->name('capture-vitals');
+            Route::post('/store-vitals/{queue}', [TriageController::class, 'storeVitals'])->name('store-vitals');
+            
+            // Assessment
+            Route::get('/assessment/{queue}', [TriageController::class, 'assessment'])->name('assessment');
+            Route::post('/store-assessment/{queue}', [TriageController::class, 'storeAssessment'])->name('store-assessment');
+            
+            // Reports
+            Route::get('/reports', [TriageController::class, 'reports'])->name('reports');
+            
+            // AJAX Routes
+            Route::get('/get-department-staff/{departmentId}', [TriageController::class, 'getDepartmentStaff'])->name('get-department-staff');
         });
     
 
