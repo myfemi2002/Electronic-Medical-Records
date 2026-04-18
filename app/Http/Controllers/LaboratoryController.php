@@ -4,10 +4,15 @@ namespace App\Http\Controllers;
 
 use App\Models\InventoryItem;
 use App\Models\ServiceOrder;
+use App\Services\VisitWorkflowService;
 use Illuminate\Http\Request;
 
 class LaboratoryController extends Controller
 {
+    public function __construct(private readonly VisitWorkflowService $workflow)
+    {
+    }
+
     public function index()
     {
         $orders = ServiceOrder::with('visit.patient')
@@ -42,6 +47,10 @@ class LaboratoryController extends Controller
             'processed_at' => now(),
             'approved_at' => !empty($validated['approve_now']) ? now() : null,
         ]);
+
+        if (!empty($validated['approve_now']) && $order->visit && $order->visit->current_stage === VisitWorkflowService::STAGE_LAB) {
+            $this->workflow->moveToStage($order->visit, VisitWorkflowService::STAGE_DOCTOR, 'results_ready', 'Laboratory result approved and returned to doctor');
+        }
 
         return back()->with('message', 'Laboratory result saved successfully.')->with('alert-type', 'success');
     }

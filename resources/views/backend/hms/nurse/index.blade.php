@@ -5,6 +5,9 @@
     <h1>Nurse Module</h1>
     <p>Nursing notes, medication administration, procedures, ward tracking, and discharge support.</p>
 </div>
+<div class="mb-4">
+    <a class="btn btn-outline-primary" href="{{ route('admin.nurse.reports') }}">View Reports</a>
+</div>
 <div class="card">
     <div class="card-header"><h5 class="card-title">Nurse Queue</h5></div>
     <div class="card-body">

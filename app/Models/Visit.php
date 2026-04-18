@@ -90,6 +90,11 @@ class Visit extends Model
         return $this->hasMany(NursingNote::class);
     }
 
+    public function scopeActive($query)
+    {
+        return $query->whereNotIn('status', ['discharged', 'cancelled']);
+    }
+
     public static function generateVisitNumber(bool $emergency = false): string
     {
         $prefix = $emergency ? 'EMG' : 'VIS';

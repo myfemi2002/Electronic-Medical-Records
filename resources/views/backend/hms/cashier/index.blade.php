@@ -5,6 +5,9 @@
     <h1>Cashier Module</h1>
     <p>Issue invoices, receive payments, and move paid visits into triage.</p>
 </div>
+<div class="mb-4">
+    <a class="btn btn-outline-primary" href="{{ route('admin.cashier.reports') }}">View Reports</a>
+</div>
 
 <div class="row g-3 mb-4">
     <div class="col-md-3"><div class="stats-card"><h6>Queue</h6><h3>{{ $stats['queue'] }}</h3></div></div>

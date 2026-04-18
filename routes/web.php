@@ -81,6 +81,7 @@ Route::middleware(['auth', 'checkBanned'])->group(function () {
 
     Route::prefix('cashier')->name('admin.cashier.')->middleware('permission:cashier.access')->group(function () {
         Route::get('/', [CashierController::class, 'index'])->name('index');
+        Route::get('/reports', [CashierController::class, 'reports'])->name('reports');
         Route::get('/{visit}', [CashierController::class, 'show'])->name('show');
         Route::post('/{visit}/invoice', [CashierController::class, 'generateInvoice'])->name('invoice');
         Route::post('/{visit}/payment', [CashierController::class, 'confirmPayment'])->name('payment');
@@ -101,6 +102,7 @@ Route::middleware(['auth', 'checkBanned'])->group(function () {
 
     Route::prefix('doctor')->name('admin.doctor.')->middleware('permission:doctor.access')->group(function () {
         Route::get('/', [DoctorController::class, 'index'])->name('index');
+        Route::get('/reports', [DoctorController::class, 'reports'])->name('reports');
         Route::get('/{visit}', [DoctorController::class, 'show'])->name('show');
         Route::post('/{visit}/encounter', [DoctorController::class, 'storeEncounter'])->name('encounter');
         Route::post('/{visit}/prescriptions', [DoctorController::class, 'addPrescription'])->name('prescriptions');
@@ -109,6 +111,7 @@ Route::middleware(['auth', 'checkBanned'])->group(function () {
 
     Route::prefix('nurse')->name('admin.nurse.')->middleware('permission:nurse.access')->group(function () {
         Route::get('/', [NurseController::class, 'index'])->name('index');
+        Route::get('/reports', [NurseController::class, 'reports'])->name('reports');
         Route::get('/{visit}', [NurseController::class, 'show'])->name('show');
         Route::post('/{visit}/notes', [NurseController::class, 'storeNote'])->name('notes');
     });

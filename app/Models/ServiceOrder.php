@@ -39,4 +39,36 @@ class ServiceOrder extends Model
     {
         return $this->belongsTo(Visit::class);
     }
+
+    public function patient()
+    {
+        return $this->belongsTo(Patient::class);
+    }
+
+    public function encounter()
+    {
+        return $this->belongsTo(ClinicalEncounter::class, 'encounter_id');
+    }
+
+    public function requestedBy()
+    {
+        return $this->belongsTo(User::class, 'requested_by');
+    }
+
+    public function processedBy()
+    {
+        return $this->belongsTo(User::class, 'processed_by');
+    }
+
+    public function approvedBy()
+    {
+        return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    public function getResultSummaryAttribute(): string
+    {
+        return $this->service_type === 'laboratory'
+            ? ($this->result_text ?: 'Result pending')
+            : ($this->report_text ?: 'Report pending');
+    }
 }

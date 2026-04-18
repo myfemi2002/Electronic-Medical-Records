@@ -5,6 +5,9 @@
     <h1>Laboratory Module</h1>
     <p>Track samples, enter results, approve findings, and expose them back to doctors.</p>
 </div>
+<div class="mb-4">
+    <a class="btn btn-outline-primary" href="{{ route('admin.laboratory.reports') }}">View Reports</a>
+</div>
 <div class="row g-3">
     <div class="col-lg-8">
         <div class="card">

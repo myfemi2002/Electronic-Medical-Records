@@ -91,4 +91,21 @@ class CashierController extends Controller
             ->with('message', 'Refund recorded successfully.')
             ->with('alert-type', 'success');
     }
+
+    public function reports()
+    {
+        $stats = [
+            'invoices_today' => Invoice::whereDate('created_at', today())->count(),
+            'revenue_today' => Payment::whereDate('paid_at', today())->sum('amount'),
+            'hmo_payments_today' => Payment::whereDate('paid_at', today())->where('payment_method', 'HMO')->sum('amount'),
+            'refunds_today' => PaymentRefund::whereDate('refunded_at', today())->sum('amount'),
+        ];
+
+        $recentInvoices = Invoice::with('patient', 'visit')
+            ->latest()
+            ->take(20)
+            ->get();
+
+        return view('backend.hms.cashier.reports', compact('stats', 'recentInvoices'));
+    }
 }

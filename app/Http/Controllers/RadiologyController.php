@@ -3,10 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Models\ServiceOrder;
+use App\Services\VisitWorkflowService;
 use Illuminate\Http\Request;
 
 class RadiologyController extends Controller
 {
+    public function __construct(private readonly VisitWorkflowService $workflow)
+    {
+    }
+
     public function index()
     {
         $orders = ServiceOrder::with('visit.patient')
@@ -44,6 +49,10 @@ class RadiologyController extends Controller
             'processed_at' => now(),
             'approved_at' => !empty($validated['approve_now']) ? now() : null,
         ]);
+
+        if (!empty($validated['approve_now']) && $order->visit && $order->visit->current_stage === VisitWorkflowService::STAGE_RADIOLOGY) {
+            $this->workflow->moveToStage($order->visit, VisitWorkflowService::STAGE_DOCTOR, 'results_ready', 'Radiology report approved and returned to doctor');
+        }
 
         return back()->with('message', 'Radiology report saved successfully.')->with('alert-type', 'success');
     }

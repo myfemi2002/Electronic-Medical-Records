@@ -20,4 +20,19 @@ class NursingNote extends Model
         'fluid_balance',
         'status',
     ];
+
+    public function visit()
+    {
+        return $this->belongsTo(Visit::class);
+    }
+
+    public function patient()
+    {
+        return $this->belongsTo(Patient::class);
+    }
+
+    public function nurse()
+    {
+        return $this->belongsTo(User::class, 'nurse_id');
+    }
 }

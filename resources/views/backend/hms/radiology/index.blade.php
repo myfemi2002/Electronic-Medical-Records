@@ -5,6 +5,9 @@
     <h1>Radiology Module</h1>
     <p>Manage imaging requests, upload scan references, record radiologist reports, and compare studies.</p>
 </div>
+<div class="mb-4">
+    <a class="btn btn-outline-primary" href="{{ route('admin.radiology.reports') }}">View Reports</a>
+</div>
 <div class="card">
     <div class="card-header"><h5 class="card-title">Imaging Requests</h5></div>
     <div class="card-body">

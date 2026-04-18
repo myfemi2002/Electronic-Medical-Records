@@ -55,4 +55,21 @@ class NurseController extends Controller
 
         return back()->with('message', 'Nursing note saved.')->with('alert-type', 'success');
     }
+
+    public function reports()
+    {
+        $stats = [
+            'notes_today' => NursingNote::whereDate('created_at', today())->count(),
+            'procedures_logged' => NursingNote::whereNotNull('procedures')->whereDate('created_at', today())->count(),
+            'medication_admin_today' => NursingNote::whereNotNull('medication_administration')->whereDate('created_at', today())->count(),
+            'completed_visits_today' => Visit::whereDate('discharged_at', today())->count(),
+        ];
+
+        $recentNotes = NursingNote::with('visit.patient')
+            ->latest()
+            ->take(20)
+            ->get();
+
+        return view('backend.hms.nurse.reports', compact('stats', 'recentNotes'));
+    }
 }

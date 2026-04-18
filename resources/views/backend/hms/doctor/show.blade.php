@@ -101,4 +101,50 @@
         </div>
     </div>
 </div>
+
+<div class="row g-3 mt-1">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header"><h5 class="card-title">Service Order Results</h5></div>
+            <div class="card-body">
+                @forelse($visit->serviceOrders as $order)
+                    <div class="border rounded p-3 mb-3">
+                        <div class="d-flex justify-content-between">
+                            <strong>{{ ucfirst($order->service_type) }}: {{ $order->request_name }}</strong>
+                            <span class="badge bg-secondary">{{ ucfirst($order->status) }}</span>
+                        </div>
+                        <div class="small text-muted mt-1">Processed by: {{ $order->processedBy->name ?? 'N/A' }} | Approved by: {{ $order->approvedBy->name ?? 'Pending' }}</div>
+                        <div class="mt-2">{{ $order->result_summary }}</div>
+                    </div>
+                @empty
+                    <p class="text-muted mb-0">No service results available yet.</p>
+                @endforelse
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header"><h5 class="card-title">Nursing Follow-up</h5></div>
+            <div class="card-body">
+                @forelse($visit->nursingNotes as $note)
+                    <div class="border rounded p-3 mb-3">
+                        <div class="d-flex justify-content-between">
+                            <strong>{{ $note->nurse->name ?? 'Nurse' }}</strong>
+                            <span class="small text-muted">{{ $note->created_at->format('d M Y, h:i A') }}</span>
+                        </div>
+                        <div class="mt-2">{{ $note->note }}</div>
+                        @if($note->medication_administration)
+                            <div class="small mt-2"><strong>Medication:</strong> {{ $note->medication_administration }}</div>
+                        @endif
+                        @if($note->procedures)
+                            <div class="small mt-1"><strong>Procedures:</strong> {{ $note->procedures }}</div>
+                        @endif
+                    </div>
+                @empty
+                    <p class="text-muted mb-0">No nursing notes recorded yet.</p>
+                @endforelse
+            </div>
+        </div>
+    </div>
+</div>
 @endsection

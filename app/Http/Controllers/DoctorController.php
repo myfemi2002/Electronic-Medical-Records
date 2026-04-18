@@ -27,7 +27,17 @@ class DoctorController extends Controller
 
     public function show(Visit $visit)
     {
-        $visit->load('patient', 'triageQueue.vitals', 'triageQueue.assessment', 'encounter', 'prescriptions', 'serviceOrders');
+        $visit->load(
+            'patient',
+            'triageQueue.vitals',
+            'triageQueue.assessment',
+            'encounter',
+            'prescriptions.prescribedBy',
+            'prescriptions.dispensedBy',
+            'serviceOrders.processedBy',
+            'serviceOrders.approvedBy',
+            'nursingNotes.nurse'
+        );
 
         return view('backend.hms.doctor.show', compact('visit'));
     }
@@ -113,5 +123,22 @@ class DoctorController extends Controller
         ]));
 
         return back()->with('message', 'Service request created.')->with('alert-type', 'success');
+    }
+
+    public function reports()
+    {
+        $stats = [
+            'consultations_today' => ClinicalEncounter::whereDate('completed_at', today())->count(),
+            'discharges_today' => ClinicalEncounter::where('disposition', 'discharged')->whereDate('completed_at', today())->count(),
+            'prescriptions_today' => Prescription::whereDate('created_at', today())->count(),
+            'orders_today' => ServiceOrder::whereDate('created_at', today())->count(),
+        ];
+
+        $recentEncounters = ClinicalEncounter::with('patient', 'doctor')
+            ->latest('completed_at')
+            ->take(20)
+            ->get();
+
+        return view('backend.hms.doctor.reports', compact('stats', 'recentEncounters'));
     }
 }
