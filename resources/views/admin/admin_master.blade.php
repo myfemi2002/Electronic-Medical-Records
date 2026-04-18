@@ -13,6 +13,13 @@
     <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     
+    <!-- Font Awesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    
+    <!-- {{-- Select2 CSS --}} -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+
+
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -829,6 +836,93 @@
     .table tbody tr td.empty-state {
         background: transparent !important;
     }
+    /* ============================
+   SELECT2 THEME — LIGHT + DARK
+   ============================ */
+
+/* Select2 Container */
+.select2-container--default .select2-selection--single {
+    background: var(--card-bg) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 10px !important;
+    height: 42px !important;
+    display: flex;
+    align-items: center;
+    color: var(--text-primary) !important;
+}
+
+/* Placeholder */
+.select2-container--default .select2-selection--single .select2-selection__placeholder {
+    color: var(--text-muted) !important;
+}
+
+/* Selected Text */
+.select2-container--default .select2-selection--single .select2-selection__rendered {
+    color: var(--text-primary) !important;
+    line-height: 42px !important;
+    padding-left: 12px !important;
+}
+
+/* Dropdown Arrow */
+.select2-container--default .select2-selection--single .select2-selection__arrow b {
+    border-color: var(--text-secondary) transparent transparent transparent !important;
+}
+
+/* Dropdown Menu */
+.select2-container--default .select2-dropdown {
+    background: var(--card-bg) !important;
+    border: 1px solid var(--border-color) !important;
+    color: var(--text-primary) !important;
+}
+
+/* Results Background */
+.select2-results__option {
+    background: var(--card-bg) !important;
+    color: var(--text-primary) !important;
+    padding: 8px 12px;
+}
+
+/* Hover */
+.select2-results__option--highlighted {
+    background: var(--hover-bg) !important;
+    color: var(--text-primary) !important;
+}
+
+/* Selected Option */
+.select2-results__option--selected {
+    background: var(--tile-bg) !important;
+}
+
+/* Search Box inside dropdown */
+.select2-search--dropdown .select2-search__field {
+    background: var(--card-bg) !important;
+    border: 1px solid var(--border-color) !important;
+    color: var(--text-primary) !important;
+}
+
+/* Multi-select chips (if you use them) */
+.select2-container--default .select2-selection--multiple {
+    background: var(--card-bg) !important;
+    border: 1px solid var(--border-color) !important;
+    min-height: 42px;
+    padding: 4px;
+    border-radius: 10px;
+    color: var(--text-primary) !important;
+}
+
+.select2-container--default .select2-selection--multiple .select2-selection__choice {
+    background: var(--tile-bg) !important;
+    border: none !important;
+    color: var(--text-primary) !important;
+    border-radius: 6px !important;
+}
+
+/* Search box in multi-select */
+.select2-container--default .select2-selection--multiple .select2-search__field {
+    color: var(--text-primary) !important;
+}
+
+
 </style>
 
 
@@ -849,6 +943,26 @@
     
     <!-- jQuery (if needed) -->
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+   
+    <!-- {{-- Select2 JS --}} -->
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+<script>
+    $(document).ready(function() {
+        $('#staff_ids').select2({
+            placeholder: "Select Staff",
+            allowClear: true,
+            width: '100%'
+        });
+
+        $('#head_of_department_id').select2({
+            placeholder: "Select Head of Department",
+            allowClear: true,
+            width: '100%'
+        });
+    });
+</script>
+
     
     @stack('scripts')
     

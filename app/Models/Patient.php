@@ -307,6 +307,16 @@ class Patient extends Model
         return $this->hasMany(ConsultancyPayment::class);
     }
 
+    public function visits()
+    {
+        return $this->hasMany(Visit::class);
+    }
+
+    public function activeVisit()
+    {
+        return $this->hasOne(Visit::class)->whereNotIn('status', ['discharged', 'cancelled'])->latestOfMany();
+    }
+
     /**
      * Relationship: Latest consultancy payment
      */

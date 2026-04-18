@@ -14,14 +14,15 @@ class TriageQueue extends Model
 
     protected $fillable = [
         'patient_id',
+        'visit_id',
         'queue_number',
         'status',
         'priority',
-        'assigned_nurse_id',
+        'assigned_staff',
+        'assigned_staff_role',
         'joined_queue_at',
         'started_at',
         'completed_at',
-        'wait_time_minutes',
         'initial_complaint',
     ];
 
@@ -37,9 +38,14 @@ class TriageQueue extends Model
         return $this->belongsTo(Patient::class);
     }
 
-    public function assignedNurse()
+    public function visit()
     {
-        return $this->belongsTo(User::class, 'assigned_nurse_id');
+        return $this->belongsTo(Visit::class);
+    }
+
+    public function assignedStaff()
+    {
+        return $this->belongsTo(User::class, 'assigned_staff');
     }
 
     public function vitals()
@@ -70,7 +76,7 @@ class TriageQueue extends Model
         return 'TRG-' . $date . '-' . $newNumber;
     }
 
-    // Calculate wait time in minutes
+    // Calculate wait time in minutes (DYNAMIC - not stored in DB)
     public function calculateWaitTime()
     {
         if ($this->started_at) {
@@ -80,21 +86,14 @@ class TriageQueue extends Model
         return $this->joined_queue_at->diffInMinutes(now());
     }
 
-    // Update wait time
-    public function updateWaitTime()
-    {
-        $this->wait_time_minutes = $this->calculateWaitTime();
-        $this->save();
-    }
-
-    // Start triage
-    public function startTriage($nurseId)
+    // Start triage with dynamic staff
+    public function startTriage($staffId, $staffRole)
     {
         $this->update([
             'status' => 'in_progress',
-            'assigned_nurse_id' => $nurseId,
+            'assigned_staff' => $staffId,
+            'assigned_staff_role' => $staffRole,
             'started_at' => now(),
-            'wait_time_minutes' => $this->calculateWaitTime(),
         ]);
     }
 
@@ -107,7 +106,7 @@ class TriageQueue extends Model
         ]);
     }
 
-    // Forward to doctor/emergency
+    // Forward to department
     public function forward()
     {
         $this->update([
@@ -149,7 +148,7 @@ class TriageQueue extends Model
     // Get waiting list ordered by priority and join time
     public static function getWaitingList()
     {
-        return self::with(['patient', 'assignedNurse'])
+        return self::with(['patient', 'assignedStaff'])
             ->waiting()
             ->today()
             ->orderByRaw("FIELD(priority, 'critical', 'moderate', 'mild')")
@@ -157,10 +156,24 @@ class TriageQueue extends Model
             ->get();
     }
 
-    // Get statistics
+    // Get statistics (FIXED - Calculate wait time dynamically)
     public static function getStats()
     {
         $today = today();
+
+        // Get all today's records to calculate average wait time
+        $todayRecords = self::today()->get();
+        $totalWaitTime = 0;
+        $count = $todayRecords->count();
+
+        if ($count > 0) {
+            foreach ($todayRecords as $record) {
+                $totalWaitTime += $record->calculateWaitTime();
+            }
+            $averageWaitTime = $totalWaitTime / $count;
+        } else {
+            $averageWaitTime = 0;
+        }
 
         return [
             'waiting_count' => self::waiting()->today()->count(),
@@ -169,8 +182,8 @@ class TriageQueue extends Model
             'critical_count' => self::critical()->today()->count(),
             'moderate_count' => self::moderate()->today()->count(),
             'mild_count' => self::mild()->today()->count(),
-            'total_today' => self::today()->count(),
-            'average_wait_time' => self::today()->avg('wait_time_minutes') ?? 0,
+            'total_today' => $count,
+            'average_wait_time' => round($averageWaitTime, 2),
         ];
     }
 
@@ -198,6 +211,27 @@ class TriageQueue extends Model
             'priority' => null, // Will be set after vital signs assessment
             'joined_queue_at' => now(),
             'initial_complaint' => $initialComplaint,
+        ]);
+    }
+
+    public static function addFromVisit(Visit $visit): self
+    {
+        $existingQueue = self::where('visit_id', $visit->id)
+            ->whereIn('status', ['waiting', 'in_progress', 'completed'])
+            ->first();
+
+        if ($existingQueue) {
+            return $existingQueue;
+        }
+
+        return self::create([
+            'patient_id' => $visit->patient_id,
+            'visit_id' => $visit->id,
+            'queue_number' => self::generateQueueNumber(),
+            'status' => 'waiting',
+            'priority' => null,
+            'joined_queue_at' => now(),
+            'initial_complaint' => $visit->chief_complaint,
         ]);
     }
 

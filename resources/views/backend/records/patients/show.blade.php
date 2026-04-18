@@ -103,6 +103,11 @@
     <div class="row mb-3">
         <div class="col-sm-12">
             <div class="d-flex justify-content-end gap-2">
+                @can('records.access')
+                <a href="{{ route('admin.hms.visits.create-for-patient', $patient->id) }}" class="btn btn-success">
+                    <i class="bi bi-diagram-3 me-1"></i> Start Visit
+                </a>
+                @endcan
                 <a href="{{ route('admin.records.patients.edit', $patient->id) }}" class="btn btn-primary">
                     <i class="bi bi-pencil-square me-1"></i> Edit Patient
                 </a>
@@ -360,7 +365,7 @@
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label text-muted">Total Visits</label>
-                            <p class="mb-0"><strong>N/A</strong></p>
+                            <p class="mb-0"><strong>{{ $patient->visits()->count() }}</strong></p>
                         </div>
                     </div>
                 </div>

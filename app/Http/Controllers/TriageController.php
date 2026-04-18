@@ -9,10 +9,14 @@ use App\Models\Patient;
 use App\Models\Department;
 use App\Models\User;
 use App\Services\VitalInterpreter;
+use App\Services\VisitWorkflowService;
 use Illuminate\Http\Request;
 
 class TriageController extends Controller
 {
+    public function __construct(private readonly VisitWorkflowService $workflow)
+    {
+    }
     /**
      * Display triage dashboard
      */
@@ -30,14 +34,52 @@ class TriageController extends Controller
     }
 
     /**
-     * Display waiting list
+     * Display comprehensive queue management with tabs for all statuses
+     * THIS IS THE NEW METHOD - Use this instead of waitingList()
+     */
+    public function queueManagement()
+    {
+        $stats = TriageQueue::getStats();
+
+        // Get all patients today with relationships
+        $baseQuery = TriageQueue::with(['patient', 'assignedStaff', 'vitals', 'assessment'])
+            ->today()
+            ->orderByRaw("FIELD(priority, 'critical', 'moderate', 'mild')")
+            ->orderBy('joined_queue_at', 'asc');
+
+        // All patients
+        $allPatients = (clone $baseQuery)->get();
+
+        // Waiting patients (no vitals captured yet OR vitals captured but in waiting status)
+        $waitingPatients = (clone $baseQuery)->where('status', 'waiting')->get();
+
+        // In Progress patients (vitals being captured or assessment in progress)
+        $inProgressPatients = (clone $baseQuery)->where('status', 'in_progress')->get();
+
+        // Completed patients (assessment done but not forwarded)
+        $completedPatients = (clone $baseQuery)->where('status', 'completed')->get();
+
+        // Forwarded patients
+        $forwardedPatients = (clone $baseQuery)->where('status', 'forwarded')->get();
+
+        return view('backend.triage.queue-management', compact(
+            'stats',
+            'allPatients',
+            'waitingPatients',
+            'inProgressPatients',
+            'completedPatients',
+            'forwardedPatients'
+        ));
+    }
+
+    /**
+     * Original waiting list method - kept for backward compatibility
+     * You can update routes to use queueManagement() instead
      */
     public function waitingList()
     {
-        $patients = TriageQueue::getWaitingList();
-        $stats = TriageQueue::getStats();
-
-        return view('backend.triage.waiting-list', compact('patients', 'stats'));
+        // Redirect to new comprehensive view
+        return redirect()->route('admin.triage.queue-management');
     }
 
     /**
@@ -45,7 +87,7 @@ class TriageController extends Controller
      */
     public function captureVitals($queueId)
     {
-        $queue = TriageQueue::with('patient')->findOrFail($queueId);
+        $queue = TriageQueue::with('patient', 'vitals')->findOrFail($queueId);
 
         // Start triage if not started
         if ($queue->status === 'waiting') {
@@ -76,21 +118,38 @@ class TriageController extends Controller
 
         $userRole = auth()->user()->staff_type ?? auth()->user()->role;
 
-        // Create vital record
-        $vital = TriageVital::create([
-            'triage_queue_id' => $queue->id,
-            'patient_id' => $queue->patient_id,
-            'recorded_by' => auth()->id(),
-            'recorded_by_role' => $userRole,
-            'blood_pressure' => $validated['blood_pressure'],
-            'temperature' => $validated['temperature'],
-            'pulse_rate' => $validated['pulse_rate'],
-            'respiratory_rate' => $validated['respiratory_rate'],
-            'oxygen_saturation' => $validated['oxygen_saturation'],
-            'weight' => $validated['weight'],
-            'height' => $validated['height'],
-            'notes' => $validated['notes'],
-        ]);
+        // Check if vitals already exist (updating)
+        if ($queue->vitals) {
+            $vital = $queue->vitals;
+            $vital->update([
+                'recorded_by' => auth()->id(),
+                'recorded_by_role' => $userRole,
+                'blood_pressure' => $validated['blood_pressure'],
+                'temperature' => $validated['temperature'],
+                'pulse_rate' => $validated['pulse_rate'],
+                'respiratory_rate' => $validated['respiratory_rate'],
+                'oxygen_saturation' => $validated['oxygen_saturation'],
+                'weight' => $validated['weight'],
+                'height' => $validated['height'],
+                'notes' => $validated['notes'],
+            ]);
+        } else {
+            // Create new vital record
+            $vital = TriageVital::create([
+                'triage_queue_id' => $queue->id,
+                'patient_id' => $queue->patient_id,
+                'recorded_by' => auth()->id(),
+                'recorded_by_role' => $userRole,
+                'blood_pressure' => $validated['blood_pressure'],
+                'temperature' => $validated['temperature'],
+                'pulse_rate' => $validated['pulse_rate'],
+                'respiratory_rate' => $validated['respiratory_rate'],
+                'oxygen_saturation' => $validated['oxygen_saturation'],
+                'weight' => $validated['weight'],
+                'height' => $validated['height'],
+                'notes' => $validated['notes'],
+            ]);
+        }
 
         // Calculate BMI
         $vital->calculateBMI();
@@ -123,15 +182,23 @@ class TriageController extends Controller
      */
     public function assessment($queueId)
     {
-        $queue = TriageQueue::with(['patient', 'vitals'])->findOrFail($queueId);
+        $queue = TriageQueue::with(['patient', 'vitals', 'assessment'])->findOrFail($queueId);
 
+        // Check if vitals exist
         if (!$queue->vitals) {
             return redirect()->route('admin.triage.capture-vitals', $queue->id)
                 ->with('message', 'Please capture vitals first')
                 ->with('alert-type', 'warning');
         }
 
-        // Get system suggestions
+        // Check if assessment already completed and forwarded
+        if ($queue->assessment && $queue->status === 'forwarded') {
+            return redirect()->route('admin.triage.queue-management')
+                ->with('message', 'This patient has already been assessed and forwarded')
+                ->with('alert-type', 'info');
+        }
+
+        // Get system suggestions from vitals
         $analysis = VitalInterpreter::analyze($queue->vitals);
         
         // Get departments for forwarding
@@ -146,6 +213,13 @@ class TriageController extends Controller
     public function storeAssessment(Request $request, $queueId)
     {
         $queue = TriageQueue::with('vitals')->findOrFail($queueId);
+
+        // Check if already forwarded
+        if ($queue->status === 'forwarded') {
+            return redirect()->route('admin.triage.queue-management')
+                ->with('message', 'This patient has already been forwarded')
+                ->with('alert-type', 'warning');
+        }
 
         $validated = $request->validate([
             'chief_complaints' => 'required|string',
@@ -163,19 +237,35 @@ class TriageController extends Controller
         // Re-run interpretation to get suggestions
         $analysis = VitalInterpreter::analyze($queue->vitals);
 
-        // Create assessment
-        $assessment = TriageAssessment::create([
-            'triage_queue_id' => $queue->id,
-            'patient_id' => $queue->patient_id,
-            'assessed_by' => auth()->id(),
-            'assessed_by_role' => $userRole,
-            'chief_complaints' => $validated['chief_complaints'],
-            'history_of_present_illness' => $validated['history_of_present_illness'],
-            'priority_level' => $validated['priority_level'],
-            'initial_assessment_notes' => $validated['initial_assessment_notes'],
-            'nurse_notes' => $validated['nurse_notes'],
-            'system_generated_suggestions' => $analysis['suggestions'],
-        ]);
+        // Check if assessment already exists
+        if ($queue->assessment) {
+            // Update existing assessment
+            $assessment = $queue->assessment;
+            $assessment->update([
+                'assessed_by' => auth()->id(),
+                'assessed_by_role' => $userRole,
+                'chief_complaints' => $validated['chief_complaints'],
+                'history_of_present_illness' => $validated['history_of_present_illness'],
+                'priority_level' => $validated['priority_level'],
+                'initial_assessment_notes' => $validated['initial_assessment_notes'],
+                'nurse_notes' => $validated['nurse_notes'],
+                'system_generated_suggestions' => $analysis['suggestions'],
+            ]);
+        } else {
+            // Create new assessment
+            $assessment = TriageAssessment::create([
+                'triage_queue_id' => $queue->id,
+                'patient_id' => $queue->patient_id,
+                'assessed_by' => auth()->id(),
+                'assessed_by_role' => $userRole,
+                'chief_complaints' => $validated['chief_complaints'],
+                'history_of_present_illness' => $validated['history_of_present_illness'],
+                'priority_level' => $validated['priority_level'],
+                'initial_assessment_notes' => $validated['initial_assessment_notes'],
+                'nurse_notes' => $validated['nurse_notes'],
+                'system_generated_suggestions' => $analysis['suggestions'],
+            ]);
+        }
 
         // Forward patient
         $assessment->forwardPatient(
@@ -186,7 +276,24 @@ class TriageController extends Controller
 
         $department = Department::find($validated['forwarded_to_department_id']);
 
-        return redirect()->route('admin.triage.waiting-list')
+        if ($queue->visit) {
+            $stage = match (strtolower($department->code ?? $department->name ?? 'doctor')) {
+                'emg', 'opd' => VisitWorkflowService::STAGE_DOCTOR,
+                'lab', 'laboratory' => VisitWorkflowService::STAGE_LAB,
+                'rad', 'radiology' => VisitWorkflowService::STAGE_RADIOLOGY,
+                'phm', 'pharmacy' => VisitWorkflowService::STAGE_PHARMACY,
+                'acc', 'accounts' => VisitWorkflowService::STAGE_CASHIER,
+                default => VisitWorkflowService::STAGE_DOCTOR,
+            };
+
+            if ($stage === VisitWorkflowService::STAGE_DOCTOR) {
+                $this->workflow->markTriaged($queue->visit);
+            } else {
+                $this->workflow->moveToStage($queue->visit, $stage, 'awaiting_' . $stage, 'Forwarded from triage to ' . $department->name);
+            }
+        }
+
+        return redirect()->route('admin.triage.queue-management')
             ->with('message', 'Patient assessed and forwarded to ' . $department->name)
             ->with('alert-type', 'success');
     }

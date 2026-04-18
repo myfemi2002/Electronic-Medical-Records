@@ -365,7 +365,9 @@ class PatientController extends Controller
      */
     public function visitHistory()
     {
-        return view('backend.records.patients.visit-history');
+        $visits = \App\Models\Visit::with('patient', 'invoice')->latest()->paginate(20);
+
+        return view('backend.records.patients.visit-history', compact('visits'));
     }
 
     /**

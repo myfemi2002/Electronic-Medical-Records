@@ -19,10 +19,16 @@
         <!-- Navbar Content -->
         <div class="collapse navbar-collapse" id="navbarContent">
             <div class="ms-auto d-flex align-items-center gap-3 mt-3 mt-lg-0">
-                <!-- Search Box -->
                 <div class="search-box w-100">
                     <i class="bi bi-search"></i>
                     <input type="search" class="form-control" placeholder="Search modules..." aria-label="Search">
+                </div>
+
+                <div class="d-none d-xl-flex gap-2">
+                    @can('records.access')<a class="btn btn-sm" href="{{ route('admin.hms.visits.index') }}">Records</a>@endcan
+                    @can('cashier.access')<a class="btn btn-sm" href="{{ route('admin.cashier.index') }}">Cashier</a>@endcan
+                    @can('triage.access')<a class="btn btn-sm" href="{{ route('admin.triage.queue-management') }}">Triage</a>@endcan
+                    @can('doctor.access')<a class="btn btn-sm" href="{{ route('admin.doctor.index') }}">Doctor</a>@endcan
                 </div>
                 
                 <!-- Navigation Icons -->

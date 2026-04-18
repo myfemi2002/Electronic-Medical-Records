@@ -71,7 +71,7 @@
                         <div class="row">
                             <!-- Blood Pressure -->
                             <div class="col-md-4">
-                                <div class="form-group">
+                                <div class="form-group mb-3">
                                     <label for="blood_pressure">
                                         Blood Pressure (mmHg) <span class="text-danger">*</span>
                                     </label>
@@ -91,7 +91,7 @@
 
                             <!-- Temperature -->
                             <div class="col-md-4">
-                                <div class="form-group">
+                                <div class="form-group mb-3">
                                     <label for="temperature">
                                         Temperature (°C) <span class="text-danger">*</span>
                                     </label>
@@ -114,7 +114,7 @@
 
                             <!-- Pulse Rate -->
                             <div class="col-md-4">
-                                <div class="form-group">
+                                <div class="form-group mb-3">
                                     <label for="pulse_rate">
                                         Pulse Rate (bpm) <span class="text-danger">*</span>
                                     </label>
@@ -138,7 +138,7 @@
                         <div class="row">
                             <!-- Respiratory Rate -->
                             <div class="col-md-4">
-                                <div class="form-group">
+                                <div class="form-group mb-3">
                                     <label for="respiratory_rate">
                                         Respiratory Rate (breaths/min) <span class="text-danger">*</span>
                                     </label>
@@ -160,7 +160,7 @@
 
                             <!-- Oxygen Saturation -->
                             <div class="col-md-4">
-                                <div class="form-group">
+                                <div class="form-group mb-3">
                                     <label for="oxygen_saturation">
                                         Oxygen Saturation (%) <span class="text-danger">*</span>
                                     </label>
@@ -182,7 +182,7 @@
 
                             <!-- Weight -->
                             <div class="col-md-4">
-                                <div class="form-group">
+                                <div class="form-group mb-3">
                                     <label for="weight">
                                         Weight (kg) <span class="text-danger">*</span>
                                     </label>
@@ -195,7 +195,8 @@
                                            max="300"
                                            placeholder="70.5"
                                            value="{{ old('weight') }}"
-                                           required>
+                                           required
+                                           oninput="calculateBMI()">
                                     @error('weight')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
@@ -206,7 +207,7 @@
                         <div class="row">
                             <!-- Height -->
                             <div class="col-md-4">
-                                <div class="form-group">
+                                <div class="form-group mb-3">
                                     <label for="height">
                                         Height (cm) <span class="text-danger">*</span>
                                     </label>
@@ -219,7 +220,8 @@
                                            max="250"
                                            placeholder="170"
                                            value="{{ old('height') }}"
-                                           required>
+                                           required
+                                           oninput="calculateBMI()">
                                     @error('height')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
@@ -228,20 +230,32 @@
 
                             <!-- BMI (Auto-calculated) -->
                             <div class="col-md-4">
-                                <div class="form-group">
+                                <div class="form-group mb-3">
                                     <label>BMI (Auto-calculated)</label>
                                     <input type="text" 
                                            class="form-control bg-light" 
                                            id="bmi_display" 
                                            readonly 
-                                           placeholder="Will be calculated">
-                                    <small class="text-muted">Normal: 18.5 - 24.9</small>
+                                           placeholder="Enter weight and height">
+                                    <small class="text-muted" id="bmi_status">Normal: 18.5 - 24.9</small>
+                                </div>
+                            </div>
+
+                            <!-- BMI Category -->
+                            <div class="col-md-4">
+                                <div class="form-group mb-3">
+                                    <label>BMI Category</label>
+                                    <input type="text" 
+                                           class="form-control bg-light" 
+                                           id="bmi_category" 
+                                           readonly 
+                                           placeholder="Auto-calculated">
                                 </div>
                             </div>
                         </div>
 
                         <!-- Notes -->
-                        <div class="form-group">
+                        <div class="form-group mb-3">
                             <label for="notes">Additional Notes</label>
                             <textarea class="form-control @error('notes') is-invalid @enderror" 
                                       id="notes" 
@@ -269,35 +283,68 @@
     </div>
 </div>
 
-@push('js')
 <script>
-$(document).ready(function() {
-    // Auto-calculate BMI
-    function calculateBMI() {
-        const weight = parseFloat($('#weight').val());
-        const height = parseFloat($('#height').val());
-        
-        if (weight && height) {
-            const heightInMeters = height / 100;
-            const bmi = weight / (heightInMeters * heightInMeters);
-            $('#bmi_display').val(bmi.toFixed(2));
-            
-            // Add color coding
-            if (bmi < 18.5) {
-                $('#bmi_display').removeClass().addClass('form-control bg-warning');
-            } else if (bmi >= 18.5 && bmi <= 24.9) {
-                $('#bmi_display').removeClass().addClass('form-control bg-success text-white');
-            } else if (bmi >= 25 && bmi <= 29.9) {
-                $('#bmi_display').removeClass().addClass('form-control bg-warning');
-            } else {
-                $('#bmi_display').removeClass().addClass('form-control bg-danger text-white');
-            }
-        }
-    }
+// Pure JavaScript BMI Calculator (No jQuery needed)
+function calculateBMI() {
+    const weight = parseFloat(document.getElementById('weight').value);
+    const height = parseFloat(document.getElementById('height').value);
+    const bmiDisplay = document.getElementById('bmi_display');
+    const bmiCategory = document.getElementById('bmi_category');
+    const bmiStatus = document.getElementById('bmi_status');
     
-    $('#weight, #height').on('input', calculateBMI);
+    if (weight && height && weight > 0 && height > 0) {
+        // Calculate BMI
+        const heightInMeters = height / 100;
+        const bmi = weight / (heightInMeters * heightInMeters);
+        
+        // Display BMI value
+        bmiDisplay.value = bmi.toFixed(2);
+        
+        // Determine category and color
+        let category = '';
+        let statusText = '';
+        let colorClass = '';
+        
+        if (bmi < 18.5) {
+            category = 'Underweight';
+            statusText = 'Below normal range';
+            colorClass = 'bg-warning text-dark';
+        } else if (bmi >= 18.5 && bmi <= 24.9) {
+            category = 'Normal';
+            statusText = 'Healthy weight range';
+            colorClass = 'bg-success text-white';
+        } else if (bmi >= 25 && bmi <= 29.9) {
+            category = 'Overweight';
+            statusText = 'Above normal range';
+            colorClass = 'bg-warning text-dark';
+        } else {
+            category = 'Obese';
+            statusText = 'Significantly above normal';
+            colorClass = 'bg-danger text-white';
+        }
+        
+        // Update display
+        bmiCategory.value = category;
+        bmiStatus.textContent = statusText;
+        
+        // Apply color coding
+        bmiDisplay.className = 'form-control ' + colorClass;
+        bmiCategory.className = 'form-control ' + colorClass;
+        
+    } else {
+        // Clear if invalid
+        bmiDisplay.value = '';
+        bmiCategory.value = '';
+        bmiStatus.textContent = 'Normal: 18.5 - 24.9';
+        bmiDisplay.className = 'form-control bg-light';
+        bmiCategory.className = 'form-control bg-light';
+    }
+}
+
+// Calculate on page load if values exist
+document.addEventListener('DOMContentLoaded', function() {
+    calculateBMI();
 });
 </script>
-@endpush
 
 @endsection
